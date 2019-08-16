@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken")
 require("dotenv/config")
 
 // @route   Post api/users
-// @desc    Register user
+// @desc    Register new user
 // @access  Public
 router.post(
     "/",

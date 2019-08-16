@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
-const Story = require("../../models/Story")
+const { Story } = require("../../models/Story")
 const User = require("../../models/User")
 require("dotenv/config")
 
@@ -85,8 +85,11 @@ router.get("/:profile_id", async (req, res) => {
 router.delete("/", auth, async (req, res) => {
     const id = req.user.id
     try {
-        await Profile.findOneAndDelete({ user: id })
+        const profile = await Profile.findOne({ user: id })
+
+        await Story.deleteMany({ profile: profile._id })
         await User.findByIdAndDelete(id)
+        profile.remove()
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
         res.status(500).send("Server error")

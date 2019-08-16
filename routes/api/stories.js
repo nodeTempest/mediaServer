@@ -31,6 +31,12 @@ router.post(
         try {
             const { title, text } = req.body
             const profile = await Profile.findOne({ user: req.user.id })
+            if (!profile) {
+                res.status(404).send({
+                    msg: "Profile for this user doesn't exist yet",
+                })
+            }
+
             const story = await new Story({
                 profile: profile._id,
                 title,
@@ -45,5 +51,35 @@ router.post(
         }
     }
 )
+
+// @route   DELETE api/stories/:story_id
+// @desc    Delete story by id
+// @access  Private
+router.delete("/:story_id", auth, async (req, res) => {
+    try {
+        const storyId = req.params.story_id
+        const story = await Story.findById(storyId)
+        const profile = await Profile.findById(story.profile)
+
+        if (!story) {
+            return res.status(404).send({ msg: "Story doesn't exist" })
+        }
+
+        if (profile.user.toString() !== req.user.id) {
+            return res.status(400).send({ msg: "Not authorized" })
+        }
+
+        profile.stories = profile.stories.filter(
+            story => story._id.toString() !== storyId
+        )
+
+        await profile.save()
+        await story.remove()
+
+        res.status(200).send({ msg: "Story has been deleted" })
+    } catch (err) {
+        return res.status(500).send("Server error")
+    }
+})
 
 module.exports = router
