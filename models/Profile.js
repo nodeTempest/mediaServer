@@ -1,5 +1,6 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
+const { StorySchema } = require("./Story")
 
 const ProfileSchema = new Schema({
     user: {
@@ -8,10 +9,12 @@ const ProfileSchema = new Schema({
     },
     skills: {
         type: [String],
-        required: true,
     },
     bio: {
         type: String,
+    },
+    stories: {
+        type: [StorySchema],
     },
 })
 

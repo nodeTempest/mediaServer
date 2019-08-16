@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
+const Story = require("../../models/Story")
 const User = require("../../models/User")
 require("dotenv/config")
 
@@ -56,6 +57,7 @@ router.get("/me", auth, async (req, res) => {
             "user",
             ["name", "avatar"]
         )
+
         res.status(200).send(profile)
     } catch (err) {
         res.status(500).send("Server error")
