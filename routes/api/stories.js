@@ -67,6 +67,49 @@ router.post(
     }
 )
 
+// @route   PUT api/stories/:story_id
+// @desc    Update story by id
+// @access  Private
+router.put("/:story_id", auth, async (req, res) => {
+    try {
+        const storyId = req.params.story_id
+        const story = await Story.findById(storyId)
+
+        if (!story) {
+            return res.status(404).send({ msg: "Story doesn't exist" })
+        }
+
+        if (story.user.toString() !== req.user.id) {
+            return res.status(400).send({ msg: "Not authorized" })
+        }
+
+        const { title, text } = req.body
+
+        if (title) story.title = title
+        if (text) story.text = text
+
+        await story.save()
+
+        const profile = await Profile.findOne({ user: req.user.id }).populate([
+            {
+                path: "user",
+                select: "avatar name",
+            },
+            {
+                path: "stories",
+                select: "title text",
+            },
+        ])
+
+        res.status(200).send(profile)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
 // @route   DELETE api/stories/:story_id
 // @desc    Delete story by id
 // @access  Private
