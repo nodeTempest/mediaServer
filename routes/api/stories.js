@@ -109,6 +109,9 @@ router.delete("/:story_id", auth, async (req, res) => {
             }
         )
     } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
         return res.status(500).send("Server error")
     }
 })

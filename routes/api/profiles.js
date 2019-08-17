@@ -76,12 +76,14 @@ router.get("/me", auth, async (req, res) => {
     }
 })
 
-// @route   GET api/profiles/:profile_id
+// @route   GET api/profiles/users/:user_id
 // @desc    Get profile by profile id
 // @access  Public
-router.get("/:profile_id", async (req, res) => {
+router.get("/users/:user_id", async (req, res) => {
     try {
-        const profile = await Profile.findById(req.params.profile_id).populate([
+        const profile = await Profile.findOne({
+            user: req.params.user_id,
+        }).populate([
             {
                 path: "user",
                 select: "avatar name",
@@ -93,6 +95,9 @@ router.get("/:profile_id", async (req, res) => {
         ])
         res.status(200).send(profile)
     } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Profile not found" })
+        }
         res.status(500).send("Server error")
     }
 })
