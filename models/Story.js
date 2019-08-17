@@ -2,9 +2,9 @@ const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
 const StorySchema = new Schema({
-    profile: {
+    user: {
         type: Schema.Types.ObjectId,
-        ref: "Profile",
+        ref: "User",
     },
     title: {
         type: String,

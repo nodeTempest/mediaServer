@@ -38,9 +38,15 @@ router.post("/", auth, async (req, res) => {
 // @access  Public
 router.get("/", async (req, res) => {
     try {
-        const profiles = await Profile.find().populate("user", [
-            "name",
-            "avatar",
+        const profiles = await Profile.find().populate([
+            {
+                path: "user",
+                select: "avatar name",
+            },
+            {
+                path: "stories",
+                select: "title text",
+            },
         ])
         res.status(200).send(profiles)
     } catch (err) {
@@ -53,10 +59,16 @@ router.get("/", async (req, res) => {
 // @access  Private
 router.get("/me", auth, async (req, res) => {
     try {
-        const profile = await Profile.findOne({ user: req.user.id }).populate(
-            "user",
-            ["name", "avatar"]
-        )
+        const profile = await Profile.findOne({ user: req.user.id }).populate([
+            {
+                path: "user",
+                select: "avatar name",
+            },
+            {
+                path: "stories",
+                select: "title text",
+            },
+        ])
 
         res.status(200).send(profile)
     } catch (err) {
@@ -69,10 +81,16 @@ router.get("/me", auth, async (req, res) => {
 // @access  Public
 router.get("/:profile_id", async (req, res) => {
     try {
-        const profile = await Profile.findById(req.params.profile_id).populate(
-            "user",
-            ["name", "avatar"]
-        )
+        const profile = await Profile.findById(req.params.profile_id).populate([
+            {
+                path: "user",
+                select: "avatar name",
+            },
+            {
+                path: "stories",
+                select: "title text",
+            },
+        ])
         res.status(200).send(profile)
     } catch (err) {
         res.status(500).send("Server error")
@@ -85,11 +103,11 @@ router.get("/:profile_id", async (req, res) => {
 router.delete("/", auth, async (req, res) => {
     const id = req.user.id
     try {
-        const profile = await Profile.findOne({ user: id })
-
-        await Story.deleteMany({ profile: profile._id })
-        await User.findByIdAndDelete(id)
-        profile.remove()
+        await Promise.all([
+            Story.deleteMany({ user: id }),
+            Profile.findOneAndDelete({ user: id }),
+            User.findByIdAndDelete(id),
+        ])
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
         res.status(500).send("Server error")

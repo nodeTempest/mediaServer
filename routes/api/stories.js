@@ -2,7 +2,6 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
-const User = require("../../models/User")
 const { Story } = require("../../models/Story")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
@@ -38,14 +37,30 @@ router.post(
             }
 
             const story = await new Story({
-                profile: profile._id,
+                user: req.user.id,
                 title,
                 text,
             }).save()
 
-            profile.stories.unshift(story)
+            profile.stories.unshift(story._id)
             await profile.save()
-            res.status(200).send(story)
+
+            profile.populate(
+                [
+                    {
+                        path: "user",
+                        select: "avatar name",
+                    },
+                    {
+                        path: "stories",
+                        select: "title text",
+                    },
+                ],
+                (err, profile) => {
+                    if (err) throw err
+                    res.status(200).send(profile)
+                }
+            )
         } catch (err) {
             return res.status(500).send("Server error")
         }
@@ -59,24 +74,40 @@ router.delete("/:story_id", auth, async (req, res) => {
     try {
         const storyId = req.params.story_id
         const story = await Story.findById(storyId)
-        const profile = await Profile.findById(story.profile)
 
         if (!story) {
             return res.status(404).send({ msg: "Story doesn't exist" })
         }
 
-        if (profile.user.toString() !== req.user.id) {
+        if (story.user.toString() !== req.user.id) {
             return res.status(400).send({ msg: "Not authorized" })
         }
 
+        const profile = await Profile.findOne({ user: req.user.id })
+
         profile.stories = profile.stories.filter(
-            story => story._id.toString() !== storyId
+            id => id.toString() !== storyId
         )
 
         await profile.save()
         await story.remove()
 
-        res.status(200).send({ msg: "Story has been deleted" })
+        profile.populate(
+            [
+                {
+                    path: "user",
+                    select: "avatar name",
+                },
+                {
+                    path: "stories",
+                    select: "title text",
+                },
+            ],
+            (err, profile) => {
+                if (err) throw err
+                res.status(200).send(profile)
+            }
+        )
     } catch (err) {
         return res.status(500).send("Server error")
     }

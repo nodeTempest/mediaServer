@@ -1,6 +1,5 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
-const { StorySchema } = require("./Story")
 
 const ProfileSchema = new Schema({
     user: {
@@ -13,9 +12,12 @@ const ProfileSchema = new Schema({
     bio: {
         type: String,
     },
-    stories: {
-        type: [StorySchema],
-    },
+    stories: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "Story",
+        },
+    ],
 })
 
 module.exports = Profile = mongoose.model("Profile", ProfileSchema)
