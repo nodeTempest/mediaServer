@@ -6,6 +6,37 @@ const { Story } = require("../../models/Story")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
 
+// @route   GET api/stories
+// @desc    Get all stories
+// @access  Public
+router.get("/", async (req, res) => {
+    try {
+        const stories = await Story.find().populate("user", ["name", "avatar"])
+        res.status(200).send(stories)
+    } catch (err) {
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   GET api/stories/:story_id
+// @desc    Get story by story id
+// @access  Public
+router.get("/:story_id", async (req, res) => {
+    try {
+        const storyId = req.params.story_id
+        const story = await Story.findById(storyId).populate("user", [
+            "name",
+            "avatar",
+        ])
+        res.status(200).send(story)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
 // @route   POST api/stories
 // @desc    Post new story
 // @access  Private
