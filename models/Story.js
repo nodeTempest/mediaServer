@@ -18,6 +18,38 @@ const StorySchema = new Schema({
         type: Date,
         default: Date.now,
     },
+    likes: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+    ],
+    dislikes: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: "User",
+        },
+    ],
+    comments: [
+        {
+            user: {
+                type: Schema.Types.ObjectId,
+                ref: "User",
+            },
+            text: {
+                type: String,
+                required: true,
+            },
+            name: String,
+            avatar: {
+                type: String,
+            },
+            date: {
+                type: Date,
+                default: Date.now,
+            },
+        },
+    ],
 })
 
 module.exports = {

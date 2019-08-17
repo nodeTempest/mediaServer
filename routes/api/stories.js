@@ -62,7 +62,7 @@ router.post(
             const { title, text } = req.body
             const profile = await Profile.findOne({ user: req.user.id })
             if (!profile) {
-                res.status(404).send({
+                return res.status(404).send({
                     msg: "Profile for this user doesn't exist yet",
                 })
             }
@@ -99,7 +99,7 @@ router.post(
 )
 
 // @route   PUT api/stories/:story_id
-// @desc    Update story by id
+// @desc    Update story by story id
 // @access  Private
 router.put("/:story_id", auth, async (req, res) => {
     try {
@@ -142,7 +142,7 @@ router.put("/:story_id", auth, async (req, res) => {
 })
 
 // @route   DELETE api/stories/:story_id
-// @desc    Delete story by id
+// @desc    Delete story by story id
 // @access  Private
 router.delete("/:story_id", auth, async (req, res) => {
     try {
@@ -185,6 +185,187 @@ router.delete("/:story_id", auth, async (req, res) => {
     } catch (err) {
         if (err.kind === "ObjectId") {
             return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   PUT api/stories/like/:story_id
+// @desc    Like a story by sotry id
+// @access  Private
+router.put("/like/:story_id", auth, async (req, res) => {
+    try {
+        const userId = req.user.id
+        const storyId = req.params.story_id
+        const story = await Story.findById(storyId)
+        const isLiked = story.likes.some(
+            likeUserId => userId === likeUserId.toString()
+        )
+        if (!isLiked) {
+            story.likes.unshift(userId)
+            story.dislikes = story.dislikes.filter(
+                dislikeUserId => userId !== dislikeUserId.toString()
+            )
+        } else {
+            story.likes = story.likes.filter(
+                likeUserId => userId !== likeUserId.toString()
+            )
+        }
+        await story.save()
+        res.send(story.likes)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   PUT api/stories/dislike/:story_id
+// @desc    Dislike a story by story id
+// @access  Private
+router.put("/dislike/:story_id", auth, async (req, res) => {
+    try {
+        const userId = req.user.id
+        const storyId = req.params.story_id
+        const story = await Story.findById(storyId)
+        const isDisiked = story.dislikes.some(
+            dislikeUserId => userId === dislikeUserId.toString()
+        )
+        if (!isDisiked) {
+            story.dislikes.unshift(userId)
+            story.likes = story.likes.filter(
+                likeUserId => userId !== likeUserId.toString()
+            )
+        } else {
+            story.dislikes = story.dislikes.filter(
+                dislikeUserId => userId !== dislikeUserId.toString()
+            )
+        }
+        await story.save()
+        res.send(story.dislikes)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   POST api/stories/comments/:story_id
+// @desc    Comment a story by story id
+// @access  Private
+router.post(
+    "/comments/:story_id",
+    [
+        auth,
+        [
+            check("text", "Text is required")
+                .not()
+                .isEmpty(),
+        ],
+    ],
+    async (req, res) => {
+        try {
+            const userId = req.user.id
+            const storyId = req.params.story_id
+            const story = await Story.findById(storyId)
+            const user = await User.findById(userId)
+
+            const { text } = req.body
+            const { name, avatar } = user
+
+            const commnet = {
+                user: userId,
+                text,
+                name,
+                avatar,
+            }
+            story.comments.unshift(commnet)
+
+            await story.save()
+            res.send(story.comments)
+        } catch (err) {
+            if (err.kind === "ObjectId") {
+                return res.status(400).json({ msg: "Story not found" })
+            }
+            return res.status(500).send("Server error")
+        }
+    }
+)
+
+// @route   PUT api/stories/comments/:story_id/:comment_id
+// @desc    Edit comment by story id and comment id
+// @access  Private
+router.put(
+    "/comments/:story_id/:comment_id",
+    [
+        auth,
+        [
+            check("text", "Text is required")
+                .not()
+                .isEmpty(),
+        ],
+    ],
+    async (req, res) => {
+        try {
+            const storyId = req.params.story_id
+            const commentId = req.params.comment_id
+
+            const story = await Story.findById(storyId)
+            if (!story) {
+                return res.status(404).send({ msg: "Story not found" })
+            }
+
+            const comment = story.comments.find(
+                comment => comment.id === commentId
+            )
+            if (!comment) {
+                return res.status(404).send({ msg: "Comment not found" })
+            }
+
+            comment.text = req.body.text
+
+            await story.save()
+            res.send(story.comments)
+        } catch (err) {
+            if (err.kind === "ObjectId") {
+                return res
+                    .status(400)
+                    .json({ msg: "Story or comment not found" })
+            }
+            return res.status(500).send("Server error")
+        }
+    }
+)
+
+// @route   DELETE api/stories/comments/:story_id/:comment_id
+// @desc    Delete a comment by story id and comment id
+// @access  Private
+router.delete("/comments/:story_id/:comment_id", auth, async (req, res) => {
+    try {
+        const storyId = req.params.story_id
+        const commentId = req.params.comment_id
+
+        const story = await Story.findById(storyId)
+        if (!story) {
+            return res.status(404).send({ msg: "Story not found" })
+        }
+
+        const comment = story.comments.find(comment => comment.id === commentId)
+        if (!comment) {
+            return res.status(404).send({ msg: "Comment not found" })
+        }
+
+        story.comments = story.comments.filter(
+            comment => comment.id !== commentId
+        )
+
+        await story.save()
+        res.send(story.comments)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story or comment not found" })
         }
         return res.status(500).send("Server error")
     }

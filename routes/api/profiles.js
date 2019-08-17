@@ -77,7 +77,7 @@ router.get("/me", auth, async (req, res) => {
 })
 
 // @route   GET api/profiles/users/:user_id
-// @desc    Get profile by profile id
+// @desc    Get profile by user id
 // @access  Public
 router.get("/users/:user_id", async (req, res) => {
     try {

@@ -6,12 +6,8 @@ const ProfileSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
     },
-    skills: {
-        type: [String],
-    },
-    bio: {
-        type: String,
-    },
+    skills: [String],
+    bio: String,
     stories: [
         {
             type: Schema.Types.ObjectId,
