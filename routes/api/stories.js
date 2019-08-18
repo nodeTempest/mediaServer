@@ -182,6 +182,9 @@ router.put("/like/:story_id", auth, async (req, res) => {
         const userId = req.user.id
         const storyId = req.params.story_id
         const story = await Story.findById(storyId)
+        if (!story) {
+            res.status(404).json({ msg: "Story not found" })
+        }
         const isLiked = story.likes.some(
             likeUserId => userId === likeUserId.toString()
         )
@@ -213,6 +216,9 @@ router.put("/dislike/:story_id", auth, async (req, res) => {
         const userId = req.user.id
         const storyId = req.params.story_id
         const story = await Story.findById(storyId)
+        if (!story) {
+            res.status(404).json({ msg: "Story not found" })
+        }
         const isDisiked = story.dislikes.some(
             dislikeUserId => userId === dislikeUserId.toString()
         )
