@@ -2,6 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
+const Comment = require("../../models/Comment")
 const { Story } = require("../../models/Story")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
@@ -11,7 +12,9 @@ require("dotenv/config")
 // @access  Public
 router.get("/", async (req, res) => {
     try {
-        const stories = await Story.find().populate("user", ["name", "avatar"])
+        const stories = await Story.find()
+            .sort("-date")
+            .populate("user", ["name", "avatar"])
         res.status(200).send(stories)
     } catch (err) {
         return res.status(500).send("Server error")
@@ -24,9 +27,19 @@ router.get("/", async (req, res) => {
 router.get("/:story_id", async (req, res) => {
     try {
         const storyId = req.params.story_id
-        const story = await Story.findById(storyId).populate("user", [
-            "name",
-            "avatar",
+        const story = await Story.findById(storyId).populate([
+            {
+                path: "user",
+                select: "name avatar",
+            },
+            {
+                path: "comments",
+                select: "text date likes dislikes",
+                populate: {
+                    path: "user",
+                    select: "name avatar",
+                },
+            },
         ])
         res.status(200).send(story)
     } catch (err) {
@@ -55,9 +68,9 @@ router.post(
     ],
     async (req, res) => {
         const errors = validationResult(req)
-        if (!errors.isEmpty())
+        if (!errors.isEmpty()) {
             return res.status(422).json({ errors: errors.array() })
-
+        }
         try {
             const { title, text } = req.body
             const profile = await Profile.findOne({ user: req.user.id })
@@ -67,7 +80,7 @@ router.post(
                 })
             }
 
-            const story = await new Story({
+            let story = await new Story({
                 user: req.user.id,
                 title,
                 text,
@@ -76,20 +89,14 @@ router.post(
             profile.stories.unshift(story._id)
             await profile.save()
 
-            profile.populate(
-                [
-                    {
-                        path: "user",
-                        select: "avatar name",
-                    },
-                    {
-                        path: "stories",
-                        select: "title text",
-                    },
-                ],
-                (err, profile) => {
+            story.populate(
+                {
+                    path: "user",
+                    select: "name avatar",
+                },
+                (err, story) => {
                     if (err) throw err
-                    res.status(200).send(profile)
+                    res.status(200).send(story)
                 }
             )
         } catch (err) {
@@ -99,7 +106,7 @@ router.post(
 )
 
 // @route   PUT api/stories/:story_id
-// @desc    Update story by story id
+// @desc    Edit story by story id
 // @access  Private
 router.put("/:story_id", auth, async (req, res) => {
     try {
@@ -121,18 +128,7 @@ router.put("/:story_id", auth, async (req, res) => {
 
         await story.save()
 
-        const profile = await Profile.findOne({ user: req.user.id }).populate([
-            {
-                path: "user",
-                select: "avatar name",
-            },
-            {
-                path: "stories",
-                select: "title text",
-            },
-        ])
-
-        res.status(200).send(profile)
+        res.status(200).send(story)
     } catch (err) {
         if (err.kind === "ObjectId") {
             return res.status(400).json({ msg: "Story not found" })
@@ -163,25 +159,13 @@ router.delete("/:story_id", auth, async (req, res) => {
             id => id.toString() !== storyId
         )
 
-        await profile.save()
-        await story.remove()
+        await Promise.all([
+            profile.save(),
+            Comment.deleteMany({ story: storyId }),
+            story.remove(),
+        ])
 
-        profile.populate(
-            [
-                {
-                    path: "user",
-                    select: "avatar name",
-                },
-                {
-                    path: "stories",
-                    select: "title text",
-                },
-            ],
-            (err, profile) => {
-                if (err) throw err
-                res.status(200).send(profile)
-            }
-        )
+        res.status(200).send({ msg: "Story has been deleted" })
     } catch (err) {
         if (err.kind === "ObjectId") {
             return res.status(400).json({ msg: "Story not found" })
@@ -247,125 +231,6 @@ router.put("/dislike/:story_id", auth, async (req, res) => {
     } catch (err) {
         if (err.kind === "ObjectId") {
             return res.status(400).json({ msg: "Story not found" })
-        }
-        return res.status(500).send("Server error")
-    }
-})
-
-// @route   POST api/stories/comments/:story_id
-// @desc    Comment a story by story id
-// @access  Private
-router.post(
-    "/comments/:story_id",
-    [
-        auth,
-        [
-            check("text", "Text is required")
-                .not()
-                .isEmpty(),
-        ],
-    ],
-    async (req, res) => {
-        try {
-            const userId = req.user.id
-            const storyId = req.params.story_id
-            const story = await Story.findById(storyId)
-            const user = await User.findById(userId)
-
-            const { text } = req.body
-            const { name, avatar } = user
-
-            const commnet = {
-                user: userId,
-                text,
-                name,
-                avatar,
-            }
-            story.comments.unshift(commnet)
-
-            await story.save()
-            res.send(story.comments)
-        } catch (err) {
-            if (err.kind === "ObjectId") {
-                return res.status(400).json({ msg: "Story not found" })
-            }
-            return res.status(500).send("Server error")
-        }
-    }
-)
-
-// @route   PUT api/stories/comments/:story_id/:comment_id
-// @desc    Edit comment by story id and comment id
-// @access  Private
-router.put(
-    "/comments/:story_id/:comment_id",
-    [
-        auth,
-        [
-            check("text", "Text is required")
-                .not()
-                .isEmpty(),
-        ],
-    ],
-    async (req, res) => {
-        try {
-            const storyId = req.params.story_id
-            const commentId = req.params.comment_id
-
-            const story = await Story.findById(storyId)
-            if (!story) {
-                return res.status(404).send({ msg: "Story not found" })
-            }
-
-            const comment = story.comments.find(
-                comment => comment.id === commentId
-            )
-            if (!comment) {
-                return res.status(404).send({ msg: "Comment not found" })
-            }
-
-            comment.text = req.body.text
-
-            await story.save()
-            res.send(story.comments)
-        } catch (err) {
-            if (err.kind === "ObjectId") {
-                return res
-                    .status(400)
-                    .json({ msg: "Story or comment not found" })
-            }
-            return res.status(500).send("Server error")
-        }
-    }
-)
-
-// @route   DELETE api/stories/comments/:story_id/:comment_id
-// @desc    Delete a comment by story id and comment id
-// @access  Private
-router.delete("/comments/:story_id/:comment_id", auth, async (req, res) => {
-    try {
-        const storyId = req.params.story_id
-        const commentId = req.params.comment_id
-
-        const story = await Story.findById(storyId)
-        if (!story) {
-            return res.status(404).send({ msg: "Story not found" })
-        }
-
-        const comment = story.comments.find(comment => comment.id === commentId)
-        if (!comment) {
-            return res.status(404).send({ msg: "Comment not found" })
-        }
-
-        story.comments = story.comments.filter(
-            comment => comment.id !== commentId
-        )
-
-        await story.save()
-        res.send(story.comments)
-    } catch (err) {
-        if (err.kind === "ObjectId") {
-            return res.status(400).json({ msg: "Story or comment not found" })
         }
         return res.status(500).send("Server error")
     }

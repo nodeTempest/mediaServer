@@ -106,15 +106,28 @@ router.get("/users/:user_id", async (req, res) => {
 // @desc    Delete current user with his content
 // @access  Private
 router.delete("/", auth, async (req, res) => {
-    const id = req.user.id
+    const userId = req.user.id
     try {
+        const comments = await Comment.find({ user: userId })
+
+        await Promise.all(
+            comments.map(async comment => {
+                const commentedStory = await Story.findById(comment.story)
+                commentedStory.comments = commentedStory.comments.filter(
+                    commentId =>
+                        commentId.toString() !== comment.story.toString()
+                )
+            })
+        )
         await Promise.all([
-            Story.deleteMany({ user: id }),
-            Profile.findOneAndDelete({ user: id }),
-            User.findByIdAndDelete(id),
+            Comment.deleteMany({ user: userId }),
+            Story.deleteMany({ user: userId }),
+            Profile.findOneAndDelete({ user: userId }),
+            User.findByIdAndDelete(userId),
         ])
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
+        console.log(err)
         res.status(500).send("Server error")
     }
 })

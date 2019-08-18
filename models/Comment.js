@@ -1,7 +1,11 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
-const StorySchema = new Schema({
+const CommentSchema = new Schema({
+    story: {
+        type: Schema.Types.ObjectId,
+        ref: "Story",
+    },
     user: {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -18,16 +22,6 @@ const StorySchema = new Schema({
             ref: "User",
         },
     ],
-    comments: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "Comment",
-        },
-    ],
-    title: {
-        type: String,
-        required: true,
-    },
     text: {
         type: String,
         required: true,
@@ -38,7 +32,4 @@ const StorySchema = new Schema({
     },
 })
 
-module.exports = {
-    StorySchema,
-    Story: mongoose.model("Story", StorySchema),
-}
+module.exports = Comment = mongoose.model("Comment", CommentSchema)

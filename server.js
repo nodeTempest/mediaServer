@@ -11,6 +11,7 @@ app.use("/api/auth", require("./routes/api/auth"))
 app.use("/api/users", require("./routes/api/users"))
 app.use("/api/profiles", require("./routes/api/profiles"))
 app.use("/api/stories", require("./routes/api/stories"))
+app.use("/api/comments", require("./routes/api/comments"))
 
 app.get("/", (req, res) => res.send("Hello from the other side"))
 

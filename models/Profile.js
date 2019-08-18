@@ -6,14 +6,14 @@ const ProfileSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
     },
-    skills: [String],
-    bio: String,
     stories: [
         {
             type: Schema.Types.ObjectId,
             ref: "Story",
         },
     ],
+    bio: String,
+    skills: [String],
 })
 
 module.exports = Profile = mongoose.model("Profile", ProfileSchema)
