@@ -39,6 +39,35 @@ router.get(/\/(videos|audios|images|stories)/, async (req, res) => {
     }
 })
 
+// @route   GET api/posts/:post_id
+// @desc    Get post by post id
+// @access  Public
+router.get("/:post_id", async (req, res) => {
+    try {
+        const postId = req.params.post_id
+        const post = await Post.findById(postId).populate([
+            {
+                path: "user",
+                select: "name avatar",
+            },
+            {
+                path: "comments",
+                select: "text date likes dislikes",
+                populate: {
+                    path: "user",
+                    select: "name avatar",
+                },
+            },
+        ])
+        res.status(200).send(post)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Post not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
 // @route   POST api/posts/(videos|audios|images|stories)
 // @desc    Create a new post with category
 // @access  Private
@@ -180,6 +209,74 @@ router.delete("/:post_id", auth, async (req, res) => {
         ])
 
         res.status(200).send({ msg: "Post has been deleted" })
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Post not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   PUT api/posts/like/:post_id
+// @desc    Like a post by post id
+// @access  Private
+router.put("/like/:post_id", auth, async (req, res) => {
+    try {
+        const userId = req.user.id
+        const postId = req.params.post_id
+        const post = await Post.findById(postId)
+        if (!post) {
+            res.status(404).json({ msg: "Post not found" })
+        }
+        const isLiked = post.likes.some(
+            likeUserId => userId === likeUserId.toString(),
+        )
+        if (!isLiked) {
+            post.likes.unshift(userId)
+            post.dislikes = post.dislikes.filter(
+                dislikeUserId => userId !== dislikeUserId.toString(),
+            )
+        } else {
+            post.likes = post.likes.filter(
+                likeUserId => userId !== likeUserId.toString(),
+            )
+        }
+        await post.save()
+        res.send(post.likes)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Post not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   PUT api/posts/dislike/:post_id
+// @desc    Dislike a post by post id
+// @access  Private
+router.put("/dislike/:post_id", auth, async (req, res) => {
+    try {
+        const userId = req.user.id
+        const postId = req.params.post_id
+        const post = await Post.findById(postId)
+        if (!post) {
+            res.status(404).json({ msg: "Post not found" })
+        }
+        const isDisiked = post.dislikes.some(
+            dislikeUserId => userId === dislikeUserId.toString(),
+        )
+        if (!isDisiked) {
+            post.dislikes.unshift(userId)
+            post.likes = post.likes.filter(
+                likeUserId => userId !== likeUserId.toString(),
+            )
+        } else {
+            post.dislikes = post.dislikes.filter(
+                dislikeUserId => userId !== dislikeUserId.toString(),
+            )
+        }
+        await post.save()
+        res.send(post.dislikes)
     } catch (err) {
         if (err.kind === "ObjectId") {
             return res.status(400).json({ msg: "Post not found" })

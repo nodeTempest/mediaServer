@@ -1,7 +1,6 @@
 const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
-const Profile = require("../../models/Profile")
 const Comment = require("../../models/Comment")
 const Post = require("../../models/Post")
 const { check, validationResult } = require("express-validator")
@@ -42,6 +41,7 @@ router.post(
                 .populate("user", ["name", "avatar"])
             res.status(200).json(comments)
         } catch (err) {
+            console.log(err)
             if (err.kind === "ObjectId") {
                 return res.status(400).json({ msg: "Post not found" })
             }
