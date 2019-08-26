@@ -7,6 +7,38 @@ const Post = require("../../models/Post")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
 
+// @route   GET api/posts
+// @desc    Get all posts
+// @access  Public
+router.get("/", async (req, res) => {
+    try {
+        const posts = await Post.find()
+            .sort("-date")
+            .populate("user", ["name", "avatar"])
+
+        res.status(200).send(posts)
+    } catch (err) {
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   GET api/posts
+// @desc    Get all posts by collection type
+// @access  Public
+router.get(/\/(videos|audios|images|stories)/, async (req, res) => {
+    try {
+        const collectionType = req.params[0]
+
+        const posts = await Post.find({ "data.collectionType": collectionType })
+            .sort("-date")
+            .populate("user", ["name", "avatar"])
+
+        res.status(200).send(posts)
+    } catch (err) {
+        return res.status(500).send("Server error")
+    }
+})
+
 // @route   POST api/posts/(videos|audios|images|stories)
 // @desc    Create a new post with collection type
 // @access  Private
