@@ -147,7 +147,42 @@ router.put("/:post_id", auth, async (req, res) => {
         res.status(200).send(post)
     } catch (err) {
         if (err.kind === "ObjectId") {
-            return res.status(400).json({ msg: "Story not found" })
+            return res.status(400).json({ msg: "Post not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
+// @route   DELETE api/posts/:post_id
+// @desc    Delete post by post id
+// @access  Private
+router.delete("/:post_id", auth, async (req, res) => {
+    try {
+        const postId = req.params.post_id
+        const post = await Post.findById(postId)
+
+        if (!post) {
+            return res.status(404).send({ msg: "Post doesn't exist" })
+        }
+
+        if (post.user.toString() !== req.user.id) {
+            return res.status(400).send({ msg: "Not authorized" })
+        }
+
+        const profile = await Profile.findOne({ user: req.user.id })
+
+        profile.posts = profile.posts.filter(id => id.toString() !== postId)
+
+        await Promise.all([
+            profile.save(),
+            Comment.deleteMany({ post: postId }),
+            post.remove(),
+        ])
+
+        res.status(200).send({ msg: "Post has been deleted" })
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Post not found" })
         }
         return res.status(500).send("Server error")
     }
