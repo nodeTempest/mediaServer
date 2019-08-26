@@ -47,7 +47,7 @@ router.post(
             }
             return res.status(500).send("Server error")
         }
-    }
+    },
 )
 
 // @route   PUT api/comments/:comment_id
@@ -96,7 +96,7 @@ router.put(
             }
             return res.status(500).send("Server error")
         }
-    }
+    },
 )
 
 // @route   DELETE api/comments/:comment_id
@@ -116,7 +116,7 @@ router.delete("/:comment_id", auth, async (req, res) => {
 
         const story = await Story.findById(comment.story)
         story.comments = story.comments.filter(
-            story => story.toString() !== comment.story.toString()
+            story => story.toString() !== comment.story.toString(),
         )
 
         await Promise.all([story.save(), comment.remove()])
@@ -142,16 +142,16 @@ router.put("/like/:comment_id", auth, async (req, res) => {
             res.status(404).json({ msg: "Comment not found" })
         }
         const isLiked = comment.likes.some(
-            likeUserId => userId === likeUserId.toString()
+            likeUserId => userId === likeUserId.toString(),
         )
         if (!isLiked) {
             comment.likes.unshift(userId)
             comment.dislikes = comment.dislikes.filter(
-                dislikeUserId => userId !== dislikeUserId.toString()
+                dislikeUserId => userId !== dislikeUserId.toString(),
             )
         } else {
             comment.likes = comment.likes.filter(
-                likeUserId => userId !== likeUserId.toString()
+                likeUserId => userId !== likeUserId.toString(),
             )
         }
 
@@ -178,23 +178,22 @@ router.put("/dislike/:comment_id", auth, async (req, res) => {
         }
 
         const isDisiked = comment.dislikes.some(
-            dislikeUserId => userId === dislikeUserId.toString()
+            dislikeUserId => userId === dislikeUserId.toString(),
         )
         if (!isDisiked) {
             comment.dislikes.unshift(userId)
             comment.likes = comment.likes.filter(
-                likeUserId => userId !== likeUserId.toString()
+                likeUserId => userId !== likeUserId.toString(),
             )
         } else {
             comment.dislikes = comment.dislikes.filter(
-                dislikeUserId => userId !== dislikeUserId.toString()
+                dislikeUserId => userId !== dislikeUserId.toString(),
             )
         }
 
         await comment.save()
         res.status(200).send(comment.dislikes)
     } catch (err) {
-        console.log(err)
         if (err.kind === "ObjectId") {
             return res.status(404).json({ msg: "Comment not found" })
         }

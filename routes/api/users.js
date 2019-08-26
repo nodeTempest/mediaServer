@@ -18,7 +18,7 @@ router.post(
         check("email", "Please enter valid email").isEmail(),
         check(
             "password",
-            "Please password with at least 6 charactrers"
+            "Please password with at least 6 charactrers",
         ).isLength({ min: 6 }),
     ],
     async (req, res) => {
@@ -42,6 +42,12 @@ router.post(
             user.password = await bcrypt.hash(password, salt)
             await user.save()
 
+            profile = await new Profile({
+                user: user._id,
+                skills: [],
+                bio: "",
+            }).save()
+
             const payload = {
                 user: {
                     id: user.id,
@@ -63,12 +69,12 @@ router.post(
                         },
                         token,
                     })
-                }
+                },
             )
         } catch (err) {
             return res.status(500).json({ errors: [{ msg: "Server error" }] })
         }
-    }
+    },
 )
 
 module.exports = router

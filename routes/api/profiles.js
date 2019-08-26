@@ -6,28 +6,35 @@ const { Story } = require("../../models/Story")
 const User = require("../../models/User")
 require("dotenv/config")
 
-// @route   POST api/profiles
-// @desc    Create or update profile for current user
+// @route   PUT api/profiles
+// @desc    Update profile for current user
 // @access  Private
-router.post("/", auth, async (req, res) => {
+router.put("/", auth, async (req, res) => {
     try {
         const user = req.user.id
         const { skills, bio } = req.body
-        let profile = await Profile.findOne({ user })
-        if (!profile) {
-            profile = await new Profile({
-                user,
-                skills,
-                bio,
-            }).save()
-        } else {
-            profile = await Profile.findOneAndUpdate(
-                { user },
-                { skills, bio },
-                { new: true }
-            )
-        }
-        res.status(200).send(profile)
+
+        const profile = await Profile.findOne({ user })
+
+        if (skills) profile.skills = skills
+        if (bio) profile.bio = bio
+
+        await profile.save()
+
+        const populatedProfile = await profile
+            .populate([
+                {
+                    path: "user",
+                    select: "avatar name",
+                },
+                {
+                    path: "stories",
+                    select: "title text",
+                },
+            ])
+            .execPopulate()
+
+        res.status(200).send(populatedProfile)
     } catch (err) {
         res.status(500).send("Server error")
     }
@@ -115,9 +122,9 @@ router.delete("/", auth, async (req, res) => {
                 const commentedStory = await Story.findById(comment.story)
                 commentedStory.comments = commentedStory.comments.filter(
                     commentId =>
-                        commentId.toString() !== comment.story.toString()
+                        commentId.toString() !== comment.story.toString(),
                 )
-            })
+            }),
         )
         await Promise.all([
             Comment.deleteMany({ user: userId }),
@@ -127,7 +134,6 @@ router.delete("/", auth, async (req, res) => {
         ])
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
-        console.log(err)
         res.status(500).send("Server error")
     }
 })
