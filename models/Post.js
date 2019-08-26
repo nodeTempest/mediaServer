@@ -1,7 +1,7 @@
 const mongoose = require("mongoose")
 const Schema = mongoose.Schema
 
-const StorySchema = new Schema({
+const PostSchema = Schema({
     user: {
         type: Schema.Types.ObjectId,
         ref: "User",
@@ -28,14 +28,28 @@ const StorySchema = new Schema({
         type: String,
         required: true,
     },
-    text: {
-        type: String,
-        required: true,
-    },
+    data: Schema({}, { discriminatorKey: "collectionType" }),
     date: {
         type: Date,
         default: Date.now,
     },
 })
 
-module.exports = Story = mongoose.model("Story", StorySchema)
+const mediaData = {
+    url: {
+        type: String,
+        required: true,
+    },
+    description: String,
+}
+
+const textData = {
+    text: { type: String, required: true },
+}
+
+PostSchema.path("data").discriminator("videos", Schema(mediaData))
+PostSchema.path("data").discriminator("audios", Schema(mediaData))
+PostSchema.path("data").discriminator("images", Schema(mediaData))
+PostSchema.path("data").discriminator("stories", Schema(textData))
+
+module.exports = Post = mongoose.model("Post", PostSchema)

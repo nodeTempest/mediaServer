@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
-const { Story } = require("../../models/Story")
+const { Post } = require("../../models/Post")
 const User = require("../../models/User")
 require("dotenv/config")
 
@@ -28,7 +28,7 @@ router.put("/", auth, async (req, res) => {
                     select: "avatar name",
                 },
                 {
-                    path: "stories",
+                    path: "posts",
                     select: "title text",
                 },
             ])
@@ -51,7 +51,7 @@ router.get("/", async (req, res) => {
                 select: "avatar name",
             },
             {
-                path: "stories",
+                path: "posts",
                 select: "title text",
             },
         ])
@@ -72,7 +72,7 @@ router.get("/me", auth, async (req, res) => {
                 select: "avatar name",
             },
             {
-                path: "stories",
+                path: "posts",
                 select: "title text",
             },
         ])
@@ -96,7 +96,7 @@ router.get("/users/:user_id", async (req, res) => {
                 select: "avatar name",
             },
             {
-                path: "stories",
+                path: "posts",
                 select: "title text",
             },
         ])
@@ -119,16 +119,16 @@ router.delete("/", auth, async (req, res) => {
 
         await Promise.all(
             comments.map(async comment => {
-                const commentedStory = await Story.findById(comment.story)
-                commentedStory.comments = commentedStory.comments.filter(
+                const commentedPost = await Post.findById(comment.post)
+                commentedPost.comments = commentedPost.comments.filter(
                     commentId =>
-                        commentId.toString() !== comment.story.toString(),
+                        commentId.toString() !== comment.post.toString(),
                 )
             }),
         )
         await Promise.all([
             Comment.deleteMany({ user: userId }),
-            Story.deleteMany({ user: userId }),
+            Post.deleteMany({ user: userId }),
             Profile.findOneAndDelete({ user: userId }),
             User.findByIdAndDelete(userId),
         ])

@@ -3,7 +3,7 @@ const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
 const Comment = require("../../models/Comment")
-const { Story } = require("../../models/Story")
+const Story = require("../../models/Story")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
 
@@ -97,12 +97,12 @@ router.post(
                 (err, story) => {
                     if (err) throw err
                     res.status(200).send(story)
-                }
+                },
             )
         } catch (err) {
             return res.status(500).send("Server error")
         }
-    }
+    },
 )
 
 // @route   PUT api/stories/:story_id
@@ -156,7 +156,7 @@ router.delete("/:story_id", auth, async (req, res) => {
         const profile = await Profile.findOne({ user: req.user.id })
 
         profile.stories = profile.stories.filter(
-            id => id.toString() !== storyId
+            id => id.toString() !== storyId,
         )
 
         await Promise.all([
@@ -186,16 +186,16 @@ router.put("/like/:story_id", auth, async (req, res) => {
             res.status(404).json({ msg: "Story not found" })
         }
         const isLiked = story.likes.some(
-            likeUserId => userId === likeUserId.toString()
+            likeUserId => userId === likeUserId.toString(),
         )
         if (!isLiked) {
             story.likes.unshift(userId)
             story.dislikes = story.dislikes.filter(
-                dislikeUserId => userId !== dislikeUserId.toString()
+                dislikeUserId => userId !== dislikeUserId.toString(),
             )
         } else {
             story.likes = story.likes.filter(
-                likeUserId => userId !== likeUserId.toString()
+                likeUserId => userId !== likeUserId.toString(),
             )
         }
         await story.save()
@@ -220,16 +220,16 @@ router.put("/dislike/:story_id", auth, async (req, res) => {
             res.status(404).json({ msg: "Story not found" })
         }
         const isDisiked = story.dislikes.some(
-            dislikeUserId => userId === dislikeUserId.toString()
+            dislikeUserId => userId === dislikeUserId.toString(),
         )
         if (!isDisiked) {
             story.dislikes.unshift(userId)
             story.likes = story.likes.filter(
-                likeUserId => userId !== likeUserId.toString()
+                likeUserId => userId !== likeUserId.toString(),
             )
         } else {
             story.dislikes = story.dislikes.filter(
-                dislikeUserId => userId !== dislikeUserId.toString()
+                dislikeUserId => userId !== dislikeUserId.toString(),
             )
         }
         await story.save()

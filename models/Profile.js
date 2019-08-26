@@ -6,10 +6,10 @@ const ProfileSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "User",
     },
-    stories: [
+    posts: [
         {
             type: Schema.Types.ObjectId,
-            ref: "Story",
+            ref: "Post",
         },
     ],
     bio: String,

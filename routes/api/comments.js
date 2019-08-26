@@ -3,15 +3,15 @@ const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
 const Comment = require("../../models/Comment")
-const { Story } = require("../../models/Story")
+const Post = require("../../models/Post")
 const { check, validationResult } = require("express-validator")
 require("dotenv/config")
 
-// @route   POST api/comments/stories/:story_id
-// @desc    Comment a story by story id
+// @route   POST api/comments/posts/:post_id
+// @desc    Comment a post by post id
 // @access  Private
 router.post(
-    "/stories/:story_id",
+    "/posts/:post_id",
     [
         auth,
         [
@@ -23,27 +23,27 @@ router.post(
     async (req, res) => {
         try {
             const userId = req.user.id
-            const storyId = req.params.story_id
-            const story = await Story.findById(storyId)
+            const postId = req.params.post_id
+            const post = await Post.findById(postId)
 
             const { text } = req.body
 
             const comment = await new Comment({
-                story: storyId,
+                post: postId,
                 user: userId,
                 text,
             }).save()
 
-            story.comments.unshift(comment._id)
-            await story.save()
+            post.comments.unshift(comment._id)
+            await post.save()
 
-            const comments = await Comment.find({ story: storyId })
+            const comments = await Comment.find({ post: postId })
                 .sort("-date")
                 .populate("user", ["name", "avatar"])
             res.status(200).json(comments)
         } catch (err) {
             if (err.kind === "ObjectId") {
-                return res.status(400).json({ msg: "Story not found" })
+                return res.status(400).json({ msg: "Post not found" })
             }
             return res.status(500).send("Server error")
         }
@@ -83,7 +83,7 @@ router.put(
             await comment.save()
 
             const comments = await Comment.find({
-                story: comment.story.toString(),
+                post: comment.post.toString(),
             })
                 .sort("-date")
                 .populate("user", ["name", "avatar"])
@@ -92,7 +92,7 @@ router.put(
             if (err.kind === "ObjectId") {
                 return res
                     .status(400)
-                    .json({ msg: "Story or comment not found" })
+                    .json({ msg: "Post or comment not found" })
             }
             return res.status(500).send("Server error")
         }
@@ -100,7 +100,7 @@ router.put(
 )
 
 // @route   DELETE api/comments/:comment_id
-// @desc    Delete a comment by story id and comment id
+// @desc    Delete a comment by post id and comment id
 // @access  Private
 router.delete("/:comment_id", auth, async (req, res) => {
     try {
@@ -114,17 +114,17 @@ router.delete("/:comment_id", auth, async (req, res) => {
             res.status(404).json({ msg: "Not authorised" })
         }
 
-        const story = await Story.findById(comment.story)
-        story.comments = story.comments.filter(
-            story => story.toString() !== comment.story.toString(),
+        const post = await Post.findById(comment.post)
+        post.comments = post.comments.filter(
+            post => post.toString() !== comment.post.toString(),
         )
 
-        await Promise.all([story.save(), comment.remove()])
+        await Promise.all([post.save(), comment.remove()])
 
         res.status(200).json({ msg: "Comment has been removed" })
     } catch (err) {
         if (err.kind === "ObjectId") {
-            return res.status(400).json({ msg: "Story or comment not found" })
+            return res.status(400).json({ msg: "Post or comment not found" })
         }
         return res.status(500).send("Server error")
     }
