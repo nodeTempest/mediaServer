@@ -22,14 +22,14 @@ router.get("/", async (req, res) => {
     }
 })
 
-// @route   GET api/posts
-// @desc    Get all posts by collection type
+// @route   GET api/posts/(videos|audios|images|stories)
+// @desc    Get all posts by category
 // @access  Public
 router.get(/\/(videos|audios|images|stories)/, async (req, res) => {
     try {
-        const collectionType = req.params[0]
+        const category = req.params[0]
 
-        const posts = await Post.find({ "data.collectionType": collectionType })
+        const posts = await Post.find({ "data.category": category })
             .sort("-date")
             .populate("user", ["name", "avatar"])
 
@@ -40,7 +40,7 @@ router.get(/\/(videos|audios|images|stories)/, async (req, res) => {
 })
 
 // @route   POST api/posts/(videos|audios|images|stories)
-// @desc    Create a new post with collection type
+// @desc    Create a new post with category
 // @access  Private
 router.post(
     /\/(videos|audios|images|stories)/,
@@ -58,11 +58,11 @@ router.post(
             return res.status(422).json({ errors: errors.array() })
         }
         try {
-            const collectionType = req.params[0]
+            const category = req.params[0]
             const { title } = req.body
             let data = {}
 
-            if (collectionType === "stories") {
+            if (category === "stories") {
                 const { text } = req.body
                 if (!text) {
                     return res.status(422).send({
@@ -86,7 +86,7 @@ router.post(
                 user: req.user.id,
                 title,
                 data: {
-                    collectionType,
+                    category,
                     ...data,
                 },
             }).save()

@@ -28,7 +28,7 @@ const PostSchema = Schema({
         type: String,
         required: true,
     },
-    data: Schema({}, { discriminatorKey: "collectionType" }),
+    data: Schema({}, { discriminatorKey: "category" }),
     date: {
         type: Date,
         default: Date.now,
