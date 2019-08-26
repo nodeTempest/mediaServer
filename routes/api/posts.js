@@ -108,4 +108,49 @@ router.post(
     },
 )
 
+// @route   PUT api/posts/:post_id
+// @desc    Edit post by post id
+// @access  Private
+router.put("/:post_id", auth, async (req, res) => {
+    try {
+        const postId = req.params.post_id
+        const post = await Post.findById(postId)
+
+        if (!post) {
+            return res.status(404).send({ msg: "Post doesn't exist" })
+        }
+
+        if (post.user.toString() !== req.user.id) {
+            return res.status(400).send({ msg: "Not authorized" })
+        }
+
+        const { title } = req.body
+        if (title) post.title = title
+
+        const { category } = post.data
+        let data = {}
+
+        if (category === "stories") {
+            const { text } = req.body
+            data = { text }
+        } else {
+            const { url, description } = req.body
+            data = { url, description }
+        }
+
+        if (data.text) post.data.text = data.text
+        if (data.url) post.data.url = data.url
+        if (data.description) post.data.description = data.description
+
+        await post.save()
+
+        res.status(200).send(post)
+    } catch (err) {
+        if (err.kind === "ObjectId") {
+            return res.status(400).json({ msg: "Story not found" })
+        }
+        return res.status(500).send("Server error")
+    }
+})
+
 module.exports = router
