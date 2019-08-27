@@ -87,7 +87,15 @@ router.put("/", auth, async (req, res) => {
         let user = await User.findById(userId)
 
         if (name) user.name = name
-        if (email) user.email = email
+        if (email) {
+            const inUse = await User.findOne({ email })
+            if (inUse) {
+                res.status(400).send({
+                    errors: [{ msg: "Email is already in use" }],
+                })
+            }
+            user.email = email
+        }
         if (avatar) user.avatar = avatar
         if (password) {
             const salt = await bcrypt.genSalt(10)
