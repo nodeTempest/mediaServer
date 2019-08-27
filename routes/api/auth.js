@@ -35,7 +35,7 @@ router.post(
         try {
             const { email, password } = req.body
 
-            const user = await User.findOne({ email })
+            let user = await User.findOne({ email })
 
             if (!user)
                 return res
@@ -55,6 +55,7 @@ router.post(
                 },
             }
 
+            user = await User.findById(user.id).select("-password")
             jwt.sign(
                 payload,
                 process.env.JWT_KEY,
@@ -62,20 +63,15 @@ router.post(
                 (err, token) => {
                     if (err) throw err
                     return res.status(200).json({
-                        user: {
-                            name: user.name,
-                            avatar: user.avatar,
-                            date: user.date,
-                            email,
-                        },
+                        user,
                         token,
                     })
-                }
+                },
             )
         } catch (err) {
             return res.status(500).json({ errors: [{ msg: "Server error" }] })
         }
-    }
+    },
 )
 
 module.exports = router
