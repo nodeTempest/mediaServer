@@ -29,7 +29,7 @@ router.put("/", auth, async (req, res) => {
                 },
                 {
                     path: "posts",
-                    select: "title text",
+                    select: "title date",
                 },
             ])
             .execPopulate()
@@ -52,7 +52,7 @@ router.get("/", async (req, res) => {
             },
             {
                 path: "posts",
-                select: "title text",
+                select: "title data",
             },
         ])
         res.status(200).send(profiles)
@@ -73,7 +73,7 @@ router.get("/me", auth, async (req, res) => {
             },
             {
                 path: "posts",
-                select: "title text",
+                select: "title data",
             },
         ])
 
@@ -97,7 +97,7 @@ router.get("/users/:user_id", async (req, res) => {
             },
             {
                 path: "posts",
-                select: "title text",
+                select: "title data",
             },
         ])
         res.status(200).send(profile)
@@ -134,7 +134,6 @@ router.delete("/", auth, async (req, res) => {
         ])
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
-        console.log(err)
         res.status(500).send("Server error")
     }
 })
