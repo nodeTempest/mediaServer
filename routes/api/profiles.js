@@ -2,7 +2,7 @@ const express = require("express")
 const router = express.Router()
 const auth = require("../../middleware/auth")
 const Profile = require("../../models/Profile")
-const { Post } = require("../../models/Post")
+const Post = require("../../models/Post")
 const User = require("../../models/User")
 require("dotenv/config")
 
@@ -134,6 +134,7 @@ router.delete("/", auth, async (req, res) => {
         ])
         res.status(200).send({ msg: "User has been deleted" })
     } catch (err) {
+        console.log(err)
         res.status(500).send("Server error")
     }
 })
