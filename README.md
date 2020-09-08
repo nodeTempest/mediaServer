@@ -10,4 +10,4 @@
 #### 7. Like/dislike posts;
 #### 8. Like/dislike comments;
 #### 9. Have a reference to atuhor of post, profile, like or dislike;
-### Use [Wiki](https://github.com/mediaServer/projectLul/wiki) for detailed in formation.
+### Use [Wiki](https://github.com/nodeTempest/mediaServer/wiki) for detailed in formation.
